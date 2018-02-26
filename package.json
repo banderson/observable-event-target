@@ -2,5 +2,9 @@
   "name": "observable-event-target",
   "version": "0.0.1",
   "main": "index.js",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "event-target": "^1.2.0",
+    "symbol-observable": "^1.2.0"
+  }
 }
