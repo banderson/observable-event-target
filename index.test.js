@@ -12,13 +12,27 @@ it('implements minimal EventTarget/ObservableEventTarget interface', () => {
 });
 
 
-const createEvent = (type, details = {}) =>
-  new CustomEvent(type, { details });
+const createEvent = (type, details = {}) => {
+  return new CustomEvent(type, { details });
+};
+
+const createSubscription = observable => {
+  const observer = {
+    next: jest.fn(),
+    error: jest.fn(),
+    complete: jest.fn(),
+  };
+  subscription = observable.subscribe(observer);
+
+  return { subscription, observer };
+};
 
 describe('#on', () => {
   let instance;
   let handlerFn;
   let observable;
+  let observer;
+  let subscription;
   beforeEach(() => {
     handlerFn = jest.fn();
     instance = new DummyTarget();
@@ -35,27 +49,26 @@ describe('#on', () => {
   });
 
   describe('when subscribed', () => {
-    let observer;
-    let completeFn;
-    let nextFn;
-    let errorFn;
-    let subscription;
     beforeEach(() => {
-      nextFn = jest.fn();
-      errorFn = jest.fn();
-      completeFn = jest.fn();
-      observer = {
-        next: nextFn,
-        error: errorFn,
-        complete: completeFn,
-      };
-      subscription = observable.subscribe(observer);
+      ({observer, subscription} = createSubscription(observable));
     });
 
     it('wires up event handler', () => {
-      expect(nextFn).not.toBeCalled();
+      expect(observer.next).not.toBeCalled();
       instance.dispatchEvent(createEvent('something'));
-      expect(nextFn).toBeCalled();
+      expect(observer.next).toBeCalled();
+    });
+  });
+
+  describe('with opts.once', () => {
+    beforeEach(() => {
+      observable = instance.on('something', handlerFn, { once: true });
+      ({observer, subscription} = createSubscription(observable));
+    });
+
+    it('is completed after first dispatch', () => {
+      instance.dispatchEvent(createEvent('something'));
+      expect(subscription.closed).toBe(true);
     });
   });
 });
