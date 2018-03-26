@@ -7,7 +7,8 @@ class ObservableEventTarget extends EventTarget {
       const eventCallback = e => {
         observer.next(e);
       };
-      this.addEventListener(type, eventCallback, opts);
+
+      this.addEventListener(type, eventCallback);
       return () => {
         this.removeEventListener(type, eventCallback);
       };

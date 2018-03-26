@@ -22,6 +22,11 @@ describe('#on', () => {
   beforeEach(() => {
     handlerFn = jest.fn();
     instance = new DummyTarget();
+    // HACK workaround for JSDOM not suppporting extendable EventTarget
+    // https://github.com/jsdom/jsdom/issues/2156#issuecomment-367965364
+    const proxy = new Proxy(instance, {});
+    proxy._document = window.document;
+    // END HACK
     observable = instance.on('something', handlerFn);
   });
 
