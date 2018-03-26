@@ -22,7 +22,10 @@ class ObservableEventTarget extends EventTarget {
       };
 
       this.addEventListener(type, eventCallback);
-      if (opts.receiveError && observer.error) {
+      if (opts.receiveError) {
+        // bind was necessary here because jest was blowing up,
+        // but it is also used in the reference implementation:
+        // https://goo.gl/yNeFVu
         this.addEventListener('error', observer.error.bind(observer));
       }
 

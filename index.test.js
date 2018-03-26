@@ -9,8 +9,6 @@ const createEvent = (type, detail = {}) => {
 const createSubscription = (observable, overrides = {}) => {
   const observer = {
     next: jest.fn(),
-    error: jest.fn(),
-    complete: jest.fn(),
     ...overrides,
   };
   subscription = observable.subscribe(observer);
@@ -154,7 +152,9 @@ describe('#on', () => {
   describe('with opts.receiveError', () => {
     beforeEach(() => {
       observable = instance.on('event-name', { receiveError: true });
-      ({ observer, subscription } = createSubscription(observable));
+      ({ observer, subscription } = createSubscription(observable, {
+        error: jest.fn(),
+      }));
     });
 
     it('invokes handler on error events', () => {
@@ -178,7 +178,7 @@ describe('#on', () => {
       subscription.unsubscribe();
       instance.dispatchEvent(createEvent('something'));
 
-      expect(observer.next.mock.calls.length).toBe(1);
+      expect(observer.error.mock.calls.length).toBe(1);
     });
   });
 });

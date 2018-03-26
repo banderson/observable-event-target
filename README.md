@@ -53,3 +53,5 @@ interface ObservableEventTarget extends EventTarget {
   Observable<Event> on(DOMString type, optional (OnOptions or boolean) options);
 }
 ```
+
+This implementation obviously draws heavily from [the example implementation](https://goo.gl/yNeFVu) but was re-implemented from scratch as a learning exercise.
