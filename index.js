@@ -19,8 +19,15 @@ class ObservableEventTarget extends EventTarget {
       };
 
       this.addEventListener(type, eventCallback);
+      if (opts.receiveError) {
+        this.addEventListener('error', eventCallback);
+      }
+
       return () => {
         this.removeEventListener(type, eventCallback);
+        if (opts.receiveError) {
+          this.removeEventListener('error', eventCallback);
+        }
       };
     });
   }

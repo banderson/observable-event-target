@@ -2,15 +2,6 @@ const ObservableEventTarget = require('./index');
 const EventTarget = require('event-target').default;
 const Observable = require('zen-observable');
 
-class DummyTarget extends ObservableEventTarget {}
-
-it('implements minimal EventTarget/ObservableEventTarget interface', () => {
-  const instance = new DummyTarget();
-  expect(typeof instance.addEventListener).toBe('function');
-  expect(typeof instance.removeEventListener).toBe('function');
-  expect(typeof instance.on).toBe('function');
-});
-
 const createEvent = (type, detail = {}) => {
   return new CustomEvent(type, { cancelable: true, detail });
 };
@@ -26,19 +17,30 @@ const createSubscription = observable => {
   return { subscription, observer };
 };
 
+
+it('implements minimal EventTarget/ObservableEventTarget interface', () => {
+  class DummyTarget extends ObservableEventTarget {}
+  const instance = new DummyTarget();
+
+  expect(typeof instance.addEventListener).toBe('function');
+  expect(typeof instance.removeEventListener).toBe('function');
+  expect(typeof instance.on).toBe('function');
+});
+
 describe('#on', () => {
   let instance;
   let observable;
   let observer;
   let subscription;
   beforeEach(() => {
+    instance = new ObservableEventTarget();
+    observable = instance.on('something');
+
     // HACK workaround for JSDOM not suppporting extendable EventTarget
     // https://github.com/jsdom/jsdom/issues/2156#issuecomment-367965364
-    instance = new DummyTarget();
     const proxy = new Proxy(instance, {});
     proxy._document = window.document;
     // END HACK
-    observable = instance.on('something');
   });
 
   it('returns an Observable', () => {
@@ -51,9 +53,9 @@ describe('#on', () => {
     });
 
     it('wires up event handler', () => {
-      expect(observer.next).not.toBeCalled();
       instance.dispatchEvent(createEvent('something'));
-      expect(observer.next).toBeCalled();
+
+      expect(observer.next.mock.calls.length).toBe(1);
     });
   });
 
@@ -65,6 +67,7 @@ describe('#on', () => {
 
     it('is completed after first dispatch', () => {
       instance.dispatchEvent(createEvent('something'));
+
       expect(subscription.closed).toBe(true);
     });
   });
@@ -80,8 +83,8 @@ describe('#on', () => {
     });
 
     it('is invoked on event dispatches', () => {
-      expect(handlerFn).not.toBeCalled();
       instance.dispatchEvent(createEvent('event-name'));
+
       expect(handlerFn).toBeCalled();
     });
 
@@ -93,6 +96,7 @@ describe('#on', () => {
       });
       ({ observer, subscription } = createSubscription(observable));
       instance.dispatchEvent(createEvent('event-name', { modified: false }));
+
       expect(observer.next.mock.calls.length).toBe(1);
       expect(observer.next.mock.calls[0][0].detail).toEqual({ modified: true });
     });
@@ -104,9 +108,40 @@ describe('#on', () => {
         },
       });
       ({ observer, subscription } = createSubscription(observable));
-      expect(observer.next).not.toBeCalled();
       instance.dispatchEvent(createEvent('event-name'));
+
       expect(observer.next).not.toBeCalled();
+    });
+  });
+
+  describe('with opts.receiveError', () => {
+    beforeEach(() => {
+      observable = instance.on('event-name', { receiveError: true });
+      ({ observer, subscription } = createSubscription(observable));
+    });
+
+    it('invokes handler on error events', () => {
+      instance.dispatchEvent(createEvent('error'));
+
+      expect(observer.next.mock.calls.length).toBe(1);
+    });
+
+    it('stops calling error handler after unsubscribe', () => {
+      instance.dispatchEvent(createEvent('error'));
+      subscription.unsubscribe();
+      instance.dispatchEvent(createEvent('error'));
+
+      expect(observer.next.mock.calls.length).toBe(1);
+    });
+  });
+
+  describe('unsubscribe fn', () => {
+    it('cleans up event handler', () => {
+      instance.dispatchEvent(createEvent('something'));
+      subscription.unsubscribe();
+      instance.dispatchEvent(createEvent('something'));
+
+      expect(observer.next.mock.calls.length).toBe(1);
     });
   });
 });
