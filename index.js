@@ -34,18 +34,20 @@ class ObservableEventTarget extends EventTarget {
         }
       };
 
+      const errorCallback = observer.error.bind(observer);
+
       this.addEventListener(type, eventCallback, opts);
       if (receiveError) {
         // bind was necessary here because jest was blowing up,
         // but it is also used in the reference implementation:
         // https://goo.gl/yNeFVu
-        this.addEventListener('error', observer.error.bind(observer));
+        this.addEventListener('error', errorCallback);
       }
 
       return () => {
         this.removeEventListener(type, eventCallback);
         if (receiveError) {
-          this.removeEventListener('error');
+          this.removeEventListener('error', errorCallback);
         }
       };
     });
