@@ -1,4 +1,4 @@
-# observable-event-target
+# ObservableEventTarget
 
 This is a sample implementation of `ObservableEventTarget` as [outlined in the Observable spec](https://github.com/tc39/proposal-observable).
 

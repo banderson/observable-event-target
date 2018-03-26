@@ -1,28 +1,41 @@
 const EventTarget = require('event-target').default;
 const Observable = require('zen-observable');
 
+const defaultOpts = {
+  receiveError: false,
+  passive: false,
+  handler: null,
+  once: false,
+};
+
 class ObservableEventTarget extends EventTarget {
-  on(type, opts = {}) {
+  on(type, opts) {
+    let { capture, once, receiveError, passive, handler } = Object.assign(
+      {},
+      defaultOpts,
+      typeof opts === 'boolean' ? { capture: opts } : opts
+    );
+
     return new Observable(observer => {
       const eventCallback = e => {
         try {
-          if (typeof opts.handler === 'function') {
-            opts.handler(e);
+          if (typeof handler === 'function') {
+            handler(e);
           }
-          if (opts.passive === true || !e.defaultPrevented) {
+          if (passive === true || !e.defaultPrevented) {
             observer.next(e);
           }
         } catch (err) {
           // ¯\_(ツ)_/¯
         } finally {
-          if (opts.once) {
+          if (once) {
             observer.complete();
           }
         }
       };
 
-      this.addEventListener(type, eventCallback);
-      if (opts.receiveError) {
+      this.addEventListener(type, eventCallback, opts);
+      if (receiveError) {
         // bind was necessary here because jest was blowing up,
         // but it is also used in the reference implementation:
         // https://goo.gl/yNeFVu
@@ -31,7 +44,7 @@ class ObservableEventTarget extends EventTarget {
 
       return () => {
         this.removeEventListener(type, eventCallback);
-        if (opts.receiveError) {
+        if (receiveError) {
           this.removeEventListener('error');
         }
       };
