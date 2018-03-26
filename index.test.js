@@ -11,9 +11,8 @@ it('implements minimal EventTarget/ObservableEventTarget interface', () => {
   expect(typeof instance.on).toBe('function');
 });
 
-
-const createEvent = (type, details = {}) => {
-  return new CustomEvent(type, { details });
+const createEvent = (type, detail = {}) => {
+  return new CustomEvent(type, { cancelable: true, detail });
 };
 
 const createSubscription = observable => {
@@ -29,19 +28,17 @@ const createSubscription = observable => {
 
 describe('#on', () => {
   let instance;
-  let handlerFn;
   let observable;
   let observer;
   let subscription;
   beforeEach(() => {
-    handlerFn = jest.fn();
-    instance = new DummyTarget();
     // HACK workaround for JSDOM not suppporting extendable EventTarget
     // https://github.com/jsdom/jsdom/issues/2156#issuecomment-367965364
+    instance = new DummyTarget();
     const proxy = new Proxy(instance, {});
     proxy._document = window.document;
     // END HACK
-    observable = instance.on('something', handlerFn);
+    observable = instance.on('something');
   });
 
   it('returns an Observable', () => {
@@ -50,7 +47,7 @@ describe('#on', () => {
 
   describe('when subscribed', () => {
     beforeEach(() => {
-      ({observer, subscription} = createSubscription(observable));
+      ({ observer, subscription } = createSubscription(observable));
     });
 
     it('wires up event handler', () => {
@@ -62,13 +59,54 @@ describe('#on', () => {
 
   describe('with opts.once', () => {
     beforeEach(() => {
-      observable = instance.on('something', handlerFn, { once: true });
-      ({observer, subscription} = createSubscription(observable));
+      observable = instance.on('something', { once: true });
+      ({ observer, subscription } = createSubscription(observable));
     });
 
     it('is completed after first dispatch', () => {
       instance.dispatchEvent(createEvent('something'));
       expect(subscription.closed).toBe(true);
+    });
+  });
+
+  describe('with opts.handler', () => {
+    let handlerFn;
+    beforeEach(() => {
+      handlerFn = jest.fn();
+      observable = instance.on('event-name', {
+        handler: handlerFn,
+      });
+      ({ observer, subscription } = createSubscription(observable));
+    });
+
+    it('is invoked on event dispatches', () => {
+      expect(handlerFn).not.toBeCalled();
+      instance.dispatchEvent(createEvent('event-name'));
+      expect(handlerFn).toBeCalled();
+    });
+
+    it('is invoked before observer.next', () => {
+      observable = instance.on('event-name', {
+        handler: e => {
+          e.detail.modified = true;
+        },
+      });
+      ({ observer, subscription } = createSubscription(observable));
+      instance.dispatchEvent(createEvent('event-name', { modified: false }));
+      expect(observer.next.mock.calls.length).toBe(1);
+      expect(observer.next.mock.calls[0][0].detail).toEqual({ modified: true });
+    });
+
+    it('can cancel observer.next call via preventDefault', () => {
+      observable = instance.on('event-name', {
+        handler: e => {
+          e.preventDefault();
+        },
+      });
+      ({ observer, subscription } = createSubscription(observable));
+      expect(observer.next).not.toBeCalled();
+      instance.dispatchEvent(createEvent('event-name'));
+      expect(observer.next).not.toBeCalled();
     });
   });
 });
