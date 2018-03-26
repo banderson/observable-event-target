@@ -77,8 +77,8 @@ describe('#on', () => {
         once: true,
       });
       ({ observer, subscription } = createSubscription(observable));
-      instance.dispatchEvent(createEvent('something'));
 
+      expect(() => { instance.dispatchEvent(createEvent('something')); }).toThrow();
       expect(subscription.closed).toBe(true);
     });
 
@@ -89,8 +89,8 @@ describe('#on', () => {
           throw new Error('blown up');
         },
       }));
-      instance.dispatchEvent(createEvent('something'));
 
+      expect(() => { instance.dispatchEvent(createEvent('something')); }).toThrow();
       expect(subscription.closed).toBe(true);
     });
   });
@@ -118,8 +118,8 @@ describe('#on', () => {
         },
       });
       ({ observer } = createSubscription(observable));
-      instance.dispatchEvent(createEvent('event-name'));
 
+      expect(() => { instance.dispatchEvent(createEvent('event-name')); }).toThrow();
       expect(handlerFn.mock.calls.length).toBe(1);
     });
 

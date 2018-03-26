@@ -25,8 +25,6 @@ class ObservableEventTarget extends EventTarget {
           if (passive === true || !e.defaultPrevented) {
             observer.next(e);
           }
-        } catch (err) {
-          // ¯\_(ツ)_/¯
         } finally {
           if (once) {
             observer.complete();
