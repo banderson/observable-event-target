@@ -1,8 +1,12 @@
 {
   "name": "observable-event-target",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "main": "index.js",
   "license": "MIT",
+  "repository": {
+    "url": "git@github.com:banderson/observable-event-target.git",
+    "type": "git"
+  },
   "scripts": {
     "test": "jest"
   },
