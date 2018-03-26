@@ -163,6 +163,14 @@ describe('#on', () => {
       expect(observer.error.mock.calls.length).toBe(1);
     });
 
+    it('unsubscribes after error is triggered', () => {
+      instance.dispatchEvent(createEvent('error'));
+      instance.dispatchEvent(createEvent('event-name'));
+
+      expect(observer.error.mock.calls.length).toBe(1);
+      expect(observer.next.mock.calls.length).toBe(0);
+    });
+
     it('stops calling error handler after unsubscribe', () => {
       instance.dispatchEvent(createEvent('error'));
       subscription.unsubscribe();

@@ -1,8 +1,8 @@
 # observable-event-target
 
-More details to come, but this is a sample implementation of `ObservableEventTarget` as [outlined in the Observable spec](https://github.com/tc39/proposal-observable).
+This is a sample implementation of `ObservableEventTarget` as [outlined in the Observable spec](https://github.com/tc39/proposal-observable).
 
-TODO: Step one is to make this example work:
+Step one is to make this example work:
 
 ```js
 const displayImage = document.querySelector("#displayImage");
