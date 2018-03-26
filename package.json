@@ -12,8 +12,7 @@
   },
   "dependencies": {
     "any-observable": "^0.2.0",
-    "event-target": "^1.2.0",
-    "symbol-observable": "^1.2.0"
+    "event-target": "^1.2.0"
   },
   "devDependencies": {
     "jest": "^22.4.3",
