@@ -1,5 +1,5 @@
 const EventTarget = require('event-target').default;
-const Observable = require('zen-observable');
+const Observable = require('any-observable');
 
 const defaultOpts = {
   receiveError: false,
