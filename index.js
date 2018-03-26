@@ -9,7 +9,7 @@ class ObservableEventTarget extends EventTarget {
           if (typeof opts.handler === 'function') {
             opts.handler(e);
           }
-          if (!(e.cancelable && e.defaultPrevented)) {
+          if (opts.passive === true || !e.defaultPrevented) {
             observer.next(e);
           }
         } catch (err) {

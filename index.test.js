@@ -145,7 +145,7 @@ describe('#on', () => {
       ({ observer } = createSubscription(observable));
       instance.dispatchEvent(createEvent('event-name'));
 
-      expect(observer.next).not.toBeCalled();
+      expect(observer.next.mock.calls.length).toBe(0);
     });
   });
 
@@ -179,6 +179,21 @@ describe('#on', () => {
       instance.dispatchEvent(createEvent('something'));
 
       expect(observer.error.mock.calls.length).toBe(1);
+    });
+  });
+
+  describe('with opts.passive === true', () => {
+    it('will not cancel the event when the handler invokes preventDefault', () => {
+      observable = instance.on('event-name', {
+        passive: true,
+        handler: e => {
+          e.preventDefault();
+        },
+      });
+      ({ observer } = createSubscription(observable));
+      instance.dispatchEvent(createEvent('event-name'));
+
+      expect(observer.next.mock.calls.length).toBe(1);
     });
   });
 });
