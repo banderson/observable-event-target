@@ -6,17 +6,17 @@ const createEvent = (type, detail = {}) => {
   return new CustomEvent(type, { cancelable: true, detail });
 };
 
-const createSubscription = observable => {
+const createSubscription = (observable, overrides = {}) => {
   const observer = {
     next: jest.fn(),
     error: jest.fn(),
     complete: jest.fn(),
+    ...overrides,
   };
   subscription = observable.subscribe(observer);
 
   return { subscription, observer };
 };
-
 
 it('implements minimal EventTarget/ObservableEventTarget interface', () => {
   class DummyTarget extends ObservableEventTarget {}
@@ -70,6 +70,31 @@ describe('#on', () => {
 
       expect(subscription.closed).toBe(true);
     });
+
+    it('completes even if exception is thrown in handler', () => {
+      observable = instance.on('something', {
+        handler: () => {
+          throw new Error('sabotaged!');
+        },
+        once: true,
+      });
+      ({ observer, subscription } = createSubscription(observable));
+      instance.dispatchEvent(createEvent('something'));
+
+      expect(subscription.closed).toBe(true);
+    });
+
+    it('completes even if exception is thrown in next', () => {
+      observable = instance.on('something', { once: true });
+      ({ observer, subscription } = createSubscription(observable, {
+        next: () => {
+          throw new Error('blown up');
+        },
+      }));
+      instance.dispatchEvent(createEvent('something'));
+
+      expect(subscription.closed).toBe(true);
+    });
   });
 
   describe('with opts.handler', () => {
@@ -79,7 +104,7 @@ describe('#on', () => {
       observable = instance.on('event-name', {
         handler: handlerFn,
       });
-      ({ observer, subscription } = createSubscription(observable));
+      ({ observer } = createSubscription(observable));
     });
 
     it('is invoked on event dispatches', () => {
@@ -88,13 +113,25 @@ describe('#on', () => {
       expect(handlerFn).toBeCalled();
     });
 
+    it('does not block observer.next call if it throws exception', () => {
+      observable = instance.on('event-name', {
+        handler: () => {
+          throw new Error('sabotaged!');
+        },
+      });
+      ({ observer } = createSubscription(observable));
+      instance.dispatchEvent(createEvent('event-name'));
+
+      expect(handlerFn.mock.calls.length).toBe(1);
+    });
+
     it('is invoked before observer.next', () => {
       observable = instance.on('event-name', {
         handler: e => {
           e.detail.modified = true;
         },
       });
-      ({ observer, subscription } = createSubscription(observable));
+      ({ observer } = createSubscription(observable));
       instance.dispatchEvent(createEvent('event-name', { modified: false }));
 
       expect(observer.next.mock.calls.length).toBe(1);
@@ -107,7 +144,7 @@ describe('#on', () => {
           e.preventDefault();
         },
       });
-      ({ observer, subscription } = createSubscription(observable));
+      ({ observer } = createSubscription(observable));
       instance.dispatchEvent(createEvent('event-name'));
 
       expect(observer.next).not.toBeCalled();
@@ -123,7 +160,7 @@ describe('#on', () => {
     it('invokes handler on error events', () => {
       instance.dispatchEvent(createEvent('error'));
 
-      expect(observer.next.mock.calls.length).toBe(1);
+      expect(observer.error.mock.calls.length).toBe(1);
     });
 
     it('stops calling error handler after unsubscribe', () => {
@@ -131,7 +168,7 @@ describe('#on', () => {
       subscription.unsubscribe();
       instance.dispatchEvent(createEvent('error'));
 
-      expect(observer.next.mock.calls.length).toBe(1);
+      expect(observer.error.mock.calls.length).toBe(1);
     });
   });
 

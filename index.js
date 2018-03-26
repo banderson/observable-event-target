@@ -5,28 +5,31 @@ class ObservableEventTarget extends EventTarget {
   on(type, opts = {}) {
     return new Observable(observer => {
       const eventCallback = e => {
-        if (typeof opts.handler === 'function') {
-          opts.handler(e);
-        }
-        if (e.cancelable && e.defaultPrevented) {
-          return;
-        }
-
-        observer.next(e);
-        if (opts.once) {
-          observer.complete();
+        try {
+          if (typeof opts.handler === 'function') {
+            opts.handler(e);
+          }
+          if (!(e.cancelable && e.defaultPrevented)) {
+            observer.next(e);
+          }
+        } catch (err) {
+          // ¯\_(ツ)_/¯
+        } finally {
+          if (opts.once) {
+            observer.complete();
+          }
         }
       };
 
       this.addEventListener(type, eventCallback);
-      if (opts.receiveError) {
-        this.addEventListener('error', eventCallback);
+      if (opts.receiveError && observer.error) {
+        this.addEventListener('error', observer.error.bind(observer));
       }
 
       return () => {
         this.removeEventListener(type, eventCallback);
         if (opts.receiveError) {
-          this.removeEventListener('error', eventCallback);
+          this.removeEventListener('error');
         }
       };
     });
